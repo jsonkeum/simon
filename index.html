@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Simon Game</title>
+    <style>
+        /*
+        #99ff99 - green
+        #99ffff - blue
+        #ff99e6 - purple
+        #ffff99 - yellow
+        */
+        @import url('https://fonts.googleapis.com/css?family=Poiret+One');
+        body {
+          background-color:#ddddd5;
+          font-family:'Poiret One', cursive;
+        }
+
+        #wrapper {
+          position:absolute;
+          margin-left:30%;
+          margin-top:100px;
+          background-color:black;
+          border-radius:100%;
+          width:606px;
+          height:604px;
+          box-shadow:3px 5px 20px black;
+        }
+        .mainbtn {
+          height:300px;
+          width:300px;
+          display:inline-block;
+          cursor:not-allowed;
+        }
+        #green {
+          background-color:#99ff99;
+          border-bottom-right-radius:100%;
+        }
+        #blue {
+          background-color:#99ffff;
+          border-bottom-left-radius:100%;
+        }
+        #purple {
+          background-color:#ff99e6;
+          border-top-left-radius:100%;
+        }
+        #yellow{
+          background-color:#ffff99;
+          border-top-right-radius:100%;
+        }
+        #console {
+          position:absolute;
+          z-index:2;
+          height:300px;
+          width:300px;
+          background-color:white;
+          left:50%;
+          top:50%;
+          border-radius:100%;
+          transform: translate(-50%, -50%);
+          text-align:center;
+        }
+        #menu > span {
+          border:1px dashed black;
+          padding:5px 10px;
+          margin-left:10px;
+          margin-right:10px;
+          cursor:pointer;
+          display:inline-block;
+          width:80px;
+        }
+
+        #start:hover {
+          background-color:#ccffb3;
+        }
+        #start:active {
+          background-color:#ffad99;
+          color:white;
+        }
+        #hard:hover {
+          background-color:#ffffb3;
+        }
+        .hardActive {
+          background-color:#ffd966;
+        }
+    </style>
+</head>
+<body>
+<div id="wrapper">
+  <div class="row">
+    <div class="button mainbtn" id="purple" disabled=true></div>
+    <div class="button mainbtn" id="yellow"></div>
+  </div>
+  <div class="row">
+    <div class="button mainbtn" id="blue"></div>
+    <div class="button mainbtn" id="green"></div>
+  </div>
+  <div id ="console">
+    <div id="title" style="font-size:3em;margin-top:50px">SIMON</div>
+    <div id="menu" style="font-size:2em;margin-top:20px;">
+      <span id="start">Start</span>            
+      <span id="hard">Hard</span>
+    </div>
+    <div id="levelCounter" style="margin-top:20px;">
+      <div id="counter" style="font-size:2em;">00/10</div>
+      <span style="font-size:1em;font-family:arial">level</span>
+    </div>
+  </div>
+</div>
+    
+<!-- 
+    Start of JS
+-->
+<script src="https://code.jquery.com/jquery-3.1.1.min.js" integrity="sha256-hVVnYaiADRTO2PzUGmuLJr8BLUSjGIZsDYGmIJLv2b8=" crossorigin="anonymous"></script>
+<script>
+$("#green").fadeTo(0, 0.5);
+$("#blue").fadeTo(0, 0.5);
+$("#purple").fadeTo(0, 0.5);
+$("#yellow").fadeTo(0, 0.5);
+
+var keys = [];
+var answer = [];
+var level = 1;
+var userKey = 0;
+var started = false;
+var hard = false;
+var userTurn = false;
+var colorCode = ['purple','yellow','blue','green'];
+var purpleSound;
+var yellowSound;
+var blueSound;
+var greenSound;
+var timeOutID;
+
+var keyMaker = function(){
+  if(started == false){
+    for(i = 0; i < 10; i++){
+      keys.push(Math.floor(Math.random()*4));
+    }
+    started = true;
+    cpuTurn();
+  } else {
+    endGame();
+  }
+};
+
+var endGame = function(){
+  started = false;
+  keys = [];
+  level = 1;
+  userKeys = 0;
+  $("#counter").text("00/10");
+  changeMessage("SIMON");
+  $(".mainbtn").css('cursor', 'not-allowed');
+  userTurn = false;
+  hard = false;
+  $("#hard").removeClass('hardActive');
+}
+
+var cpuTurn = function(){
+    levelChange();
+    changeMessage("LISTEN");
+    var i = 0;
+    timeOutID = setInterval(function(){
+      if(i < level){
+        buttonLight(keys[i]);
+        i++;
+      } else {
+        $(".mainbtn").css('cursor', 'pointer');
+        userTurn = true;
+        changeMessage("GO");
+        clearInterval(timeOutID);
+      }
+    }, 1200);
+};
+
+var answerCheck = function(id){
+  userTurn = false;
+  if(colorCode.indexOf(id) != keys[userKey]){
+    changeMessage("WRONG");
+    $("#start").text("Start");
+    if(hard == true){
+      setTimeout(function(){
+        endGame();
+      },2000);
+    } else {
+      setTimeout(function(){
+        userKey = 0;
+        cpuTurn();
+      },2000);
+    }
+  } else {
+    userKey++;
+    userTurn = true;
+    if(userKey == level){
+      $(".mainbtn").css('cursor', 'not-allowed');
+      userKey = 0;
+      userTurn = false;
+      level++;
+      if(level > 10){
+        changeMessage("You Win!");
+        setTimeout(function(){
+          endGame();
+        },2000);
+      } else {
+        changeMessage("CORRECT")
+        setTimeout(function(){
+          cpuTurn();
+        },2000);
+      } 
+    }
+  }
+};
+
+var buttonLight = function(number){
+  switch(number){
+    case 0:
+    case "purple":
+      purpleSound.play();
+      $("#purple").fadeTo(700, 1);
+      $("#purple").fadeTo(400, 0.5);
+      break;
+    case 1:
+    case "yellow":
+      yellowSound.play();
+      $("#yellow").fadeTo(700, 1);
+      $("#yellow").fadeTo(400, 0.5);
+      break;
+    case 2:
+    case "blue":
+      blueSound.play();
+      $("#blue").fadeTo(700, 1);
+      $("#blue").fadeTo(400, 0.5);
+      break;
+    case 3:
+    case "green":
+      greenSound.play();
+      $("#green").fadeTo(700, 1);
+      $("#green").fadeTo(400, 0.5);
+      break;
+    default:
+      break;
+  }
+};
+
+var setDifficulty = function(){
+  hard = !hard;
+  $("#hard").toggleClass('hardActive');
+};
+
+var changeMessage = function(message){
+  $("#title").animate({opacity: 0}, 250, function(){
+      $("#title").text(message);
+      $("#title").animate({opacity: 1}, 250);
+  });
+};
+
+var levelChange = function(){
+  $("#counter").text((level < 10 ? "0" : "") + level + "/10");
+}
+
+$(document).ready(function(){
+  purpleSound = document.createElement('audio');
+  purpleSound.src="https://s3.amazonaws.com/freecodecamp/simonSound1.mp3";
+  purpleSound.autoPlay = false;
+  purpleSound.preLoad = true;
+  
+  yellowSound = document.createElement('audio');
+  yellowSound.src="https://s3.amazonaws.com/freecodecamp/simonSound2.mp3";
+  yellowSound.autoPlay = false;
+  yellowSound.preLoad = true;
+  
+  blueSound = document.createElement('audio');
+  blueSound.src="https://s3.amazonaws.com/freecodecamp/simonSound3.mp3";
+  blueSound.autoPlay = false;
+  blueSound.preLoad = true;
+  
+  greenSound = document.createElement('audio');
+  greenSound.src="https://s3.amazonaws.com/freecodecamp/simonSound4.mp3";
+  greenSound.autoPlay = false;
+  greenSound.preLoad = true;
+  $("#start").click(function(){
+    if($("#start").text() == "Start"){
+      $("#start").text("Reset");
+      keyMaker();
+    } else if($("#start").text() == "Reset" && userTurn == true){
+      $("#start").text("Start");
+      endGame();
+    }
+  });
+  $("#hard").click(function(){
+    setDifficulty();
+  });
+  $(".mainbtn").click(function(){
+    if(userTurn == true){
+      var id = $(this).attr('id');
+      answerCheck(id);
+      buttonLight(id);
+    }
+  });
+});
+</script>
+</body>
+</html>
